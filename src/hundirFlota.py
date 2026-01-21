@@ -6,14 +6,22 @@ class Barco:
         self.tamanio = tamanio
         self.nombre = nombre
         self.posiciones = []
-        self.tocados = 0
+        self.vidas = tamanio
+
+    def __str__(self):
+        return f"Barco: {self.nombre} - Tamaño: {self.tamanio} - Posiciones: {self.posiciones}"
+
+    def __repr__(self):
+        # Esto le dice a Python: "Cuando estés en una lista, usa lo mismo que en __str__"
+        return self.__str__()
 
 
 class Tablero:
     def __init__(self, dimension=8):
         self.dimension = dimension
-        self.grid = [["~"] * dimension for _ in range(dimension)]
+        self.cuadricula = [["~"] * dimension for _ in range(dimension)]
         self.barcos = []
+        self.ataques = []
 
     def agregar_barco(self, barco):
         barco_puesto = False
@@ -32,7 +40,7 @@ class Tablero:
                 columna = random.randint(0, self.dimension - 1)
 
             es_valido = True
-            coords_tentativas = []
+            coordenadas_posibles = []
 
             for i in range(barco.tamanio):
                 if orientacion == "H":
@@ -40,30 +48,37 @@ class Tablero:
                 else:
                     f, c = fila + i, columna
 
-                coords_tentativas.append((f, c))
+                coordenadas_posibles.append((f, c))
 
                 # Si la casilla NO es agua, ya no es válido
-                if self.grid[f][c] != "~":
-                    es_valido = False
+                for i_f in range(f - 1, f + 2):
+                    for i_c in range(c - 1, c + 2):
+
+                        # A. Comprobamos si la casilla vecina está DENTRO del tablero
+                        if 0 <= i_f < len(self.cuadricula) and 0 <= i_c < len(self.cuadricula):
+
+                            # B. Si está dentro, miramos si NO es agua
+                            if self.cuadricula[i_f][i_c] != "~":
+                                es_valido = False
 
             if es_valido:
-                for f, c in coords_tentativas:
-                    self.grid[f][c] = barco.nombre[0]
+                for f, c in coordenadas_posibles:
+                    self.cuadricula[f][c] = barco.nombre[0]
 
-                barco.posiciones = coords_tentativas
+                barco.posiciones = coordenadas_posibles
 
                 self.barcos.append(barco)
 
                 barco_puesto = True
 
     def imprimir(self):
-        for fila in self.grid:
+        for fila in self.cuadricula:
             print(fila)
 
 
 
 def main():
-    mi_tablero = Tablero(dimension=8)
+    tablero_juego = Tablero(dimension=8)
 
     flota = [
         Barco(5, "Portaaviones"),
@@ -73,12 +88,12 @@ def main():
         Barco(2, "Destructor")
     ]
 
-    for nave in flota:
-        mi_tablero.agregar_barco(nave)
+    for barco in flota:
+        tablero_juego.agregar_barco(barco)
 
-    mi_tablero.imprimir()
+    tablero_juego.imprimir()
 
-    print(f"\nEl Portaaviones quedó en: {flota[0].posiciones}")
+    print(tablero_juego.barcos)
 
 
 if __name__ == '__main__':
