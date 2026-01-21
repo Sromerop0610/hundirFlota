@@ -2,75 +2,84 @@ import random
 
 
 class Barco:
-    def __init__(self, tamanio):
+    def __init__(self, tamanio, nombre="Barco"):
         self.tamanio = tamanio
+        self.nombre = nombre
         self.posiciones = []
+        self.tocados = 0
 
 
-def colocar_barco(tablero, barco):
-    true = True
-    while true:
-        orientacion = ["V", "H"]
-        orientacion_elegida = random.choice(orientacion)
+class Tablero:
+    def __init__(self, dimension=8):
+        self.dimension = dimension
+        self.grid = [["~"] * dimension for _ in range(dimension)]
+        self.barcos = []
 
-        maximo = 7 - barco.tamanio
+    def agregar_barco(self, barco):
+        barco_puesto = False
 
-        if orientacion_elegida == "H":
-            fila = random.randint(0, 7)
-            columna = random.randint(0, maximo)
-        else:
-            fila = random.randint(0, maximo)
-            columna = random.randint(0, 7)
+        while not barco_puesto:
+            orientaciones = ["V", "H"]
+            orientacion = random.choice(orientaciones)
 
-        posiciones = []
+            limite = self.dimension - barco.tamanio
 
-        for i in range(barco.tamanio):
-            if orientacion_elegida == "H":
-                f = fila
-                c = columna + i
+            if orientacion == "H":
+                fila = random.randint(0, self.dimension - 1)
+                columna = random.randint(0, limite)
             else:
-                f = fila + i
-                c = columna
+                fila = random.randint(0, limite)
+                columna = random.randint(0, self.dimension - 1)
 
-            if f >= 8 or c >= 8:
-                true = False
-            else:
-                if tablero[f][c] != "~":
-                    true = False
+            es_valido = True
+            coords_tentativas = []
 
-            posiciones.append((f, c))
+            for i in range(barco.tamanio):
+                if orientacion == "H":
+                    f, c = fila, columna + i
+                else:
+                    f, c = fila + i, columna
 
-        if len(posiciones) == barco.tamanio:
-            for f, c in posiciones:
-                tablero[f][c] = "B"
-            barco.posiciones = posiciones
-            return
+                coords_tentativas.append((f, c))
 
-def tocado_hundido(tablero, barco, posicion_ataque):
+                # Si la casilla NO es agua, ya no es válido
+                if self.grid[f][c] != "~":
+                    es_valido = False
 
+            if es_valido:
+                for f, c in coords_tentativas:
+                    self.grid[f][c] = barco.nombre[0]
 
+                barco.posiciones = coords_tentativas
 
-    posicion_ataque[0]
+                self.barcos.append(barco)
 
+                barco_puesto = True
+
+    def imprimir(self):
+        for fila in self.grid:
+            print(fila)
 
 
 
 def main():
-    tablero = [["~"] * 8 for _ in range(8)]
+    mi_tablero = Tablero(dimension=8)
 
-    crucero = Barco(4)
+    flota = [
+        Barco(5, "Portaaviones"),
+        Barco(4, "Acorazado"),
+        Barco(3, "Crucero"),
+        Barco(3, "Submarino"),
+        Barco(2, "Destructor")
+    ]
 
-    colocar_barco(tablero, crucero)
+    for nave in flota:
+        mi_tablero.agregar_barco(nave)
 
+    mi_tablero.imprimir()
 
-    for fila in tablero:
-        print(fila)
+    print(f"\nEl Portaaviones quedó en: {flota[0].posiciones}")
+
 
 if __name__ == '__main__':
     main()
-
-""" portaaviones =
-    acorazado = 
-    crucero = 
-    submarino = 
-    destructor = """
