@@ -71,11 +71,59 @@ class Tablero:
 
                 barco_puesto = True
 
+    def recibir_ataque(self, fila, columna):
+        """
+        Verifica un ataque recibido en (fila, columna).
+        Actualiza el tablero y la vida de los barcos.
+        Devuelve: 'Agua', 'Tocado', 'Hundido' o 'Repetido'.
+        """
+
+        # Leemos qué hay en la casilla antes de tocar nada
+        contenido = self.cuadricula[fila][columna]
+        estado_ataque = ""
+
+        # --- CASO 1: YA SE HABÍA DISPARADO AHÍ ---
+        if contenido == "X" or contenido == "o":
+            estado_ataque = "Repetido"
+
+        # --- CASO 2: ES AGUA ---
+        elif contenido == "~":
+            self.cuadricula[fila][columna] = "o"  # Marcamos fallo
+            estado_ataque = "Agua"
+
+        # --- CASO 3: ES UN BARCO ---
+        else:
+            # 1. Marcamos el golpe en el mapa visual
+            self.cuadricula[fila][columna] = "X"
+
+            # 2. Buscamos a qué barco le ha dolido (SIN usar break)
+            barco_encontrado = False
+            indice = 0
+
+            # Recorremos la lista de barcos hasta encontrar al dueño o terminar la lista
+            while indice < len(self.barcos) and not barco_encontrado:
+                barco = self.barcos[indice]
+
+                # Comprobamos si la coordenada está en este barco
+                if (fila, columna) in barco.posiciones:
+                    barco.vidas -= 1  # Restamos vida
+                    barco_encontrado = True  # Esto detiene el while limpiamente
+
+                    # Decidimos si es tocado o hundido
+                    if barco.vidas == 0:
+                        estado_ataque = "Hundido"
+                    else:
+                        estado_ataque = "Tocado"
+
+                indice += 1  # Avanzamos al siguiente barco si no lo hemos encontrado
+
+        return estado_ataque
+
     def imprimir(self):
+        print()
         for fila in self.cuadricula:
             print(fila)
-
-
+        print()
 
 def main():
     tablero_juego = Tablero(dimension=8)
@@ -93,7 +141,11 @@ def main():
 
     tablero_juego.imprimir()
 
-    print(tablero_juego.barcos)
+
+
+    print(tablero_juego.recibir_ataque(2,2))
+
+
 
 
 if __name__ == '__main__':
