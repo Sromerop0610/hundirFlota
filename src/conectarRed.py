@@ -220,7 +220,7 @@ if __name__ == "__main__":
                     # Mostrar el tablero de ataques al rival
                     imprimir_tablero_ataques(tablero_ataques)
 
-                    if "VICTORIA" in respuesta:
+                    if "DERROTA" in respuesta:
                         print("\n" + "*" * 40)
                         print("¡VICTORIA! HAS HUNDIDO LA FLOTA RIVAL.")
                         print("*" * 40)
@@ -257,7 +257,7 @@ if __name__ == "__main__":
 
                     # Cuando he perdido los barcos
                     if not mi_tablero.quedan_barcos_vivos():
-                        resultado_impacto = "VICTORIA"  # Le digo al otro que ganó
+                        resultado_impacto = "DERROTA"  # Le digo al otro que ganó
                         canal_juego.sendall(resultado_impacto.encode())
 
                         print("\n" + "!" * 40)
