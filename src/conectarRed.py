@@ -6,7 +6,7 @@ from hundirFlota import *
 
 PUERTO = 4000
 ID = str(uuid.uuid4())
-NOMBRE = "EMPANADA DE CARNE"
+NOMBRE = "BUJARRILLA"
 
 
 def obtener_ip():
@@ -111,6 +111,43 @@ def recibir_mensaje(sock):
         return None
 
 
+def imprimir_tablero_ataques(tablero_ataques, dimension=8):
+    """
+    Imprime el tablero de seguimiento de ataques al rival.
+    Muestra: ~ = no atacado, o = agua, X = tocado/hundido.
+    Columnas = letras (A-H), Filas = números (1-8).
+    """
+    print("\n  TABLERO DE ATAQUES AL RIVAL:")
+    print("    ", end="")
+    for letra in "ABCDEFGH"[:dimension]:
+        print(letra, end=" ")
+    print()
+
+    for idx, fila in enumerate(tablero_ataques):
+        print(f"  {idx + 1} ", end="")
+        for celda in fila:
+            print(celda, end=" ")
+        print()
+    print()
+
+
+def registrar_ataque_en_tablero(tablero_ataques, columna_letra, fila_num_usuario, resultado):
+    """
+    Registra el resultado de un ataque en el tablero de seguimiento.
+    - columna_letra: letra 'a'-'h' (columna).
+    - fila_num_usuario: número 1-8 (fila).
+    - resultado: 'AGUA', 'TOCADO', 'HUNDIDO', etc.
+    """
+    diccionario_letras = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
+    col_idx = diccionario_letras[columna_letra.lower()]
+    fila_idx = fila_num_usuario - 1  # Conversión 1-8 → 0-7
+
+    if resultado in ("TOCADO", "HUNDIDO"):
+        tablero_ataques[fila_idx][col_idx] = "X"
+    elif resultado == "AGUA":
+        tablero_ataques[fila_idx][col_idx] = "o"
+
+
 if __name__ == "__main__":
     resultado = buscar_partida()
 
@@ -138,20 +175,23 @@ if __name__ == "__main__":
         ]
         for b in flota:
             mi_tablero.agregar_barco(b)
-        
+
+        # Tablero de seguimiento de ataques al rival (8x8 vacío)
+        tablero_ataques = [["~"] * 8 for _ in range(8)]
+
         partida_activa = True
 
         while partida_activa:
-            time.sleep(1.5) 
-            
-            print("\n" + "="*20)
+            time.sleep(1.5)
+
+            print("\n" + "=" * 20)
             print("ESTADO DE TU FLOTA:")
             mi_tablero.imprimir(ocultar_barcos=False)
-            print("="*20 + "\n")
+            print("=" * 20 + "\n")
 
             if es_mi_turno:
                 print(f"\n--- TU TURNO DE ATACAR A {nombre_rival} ---")
-                
+
                 coord_ia = mi_tablero.atacar()
                 letra = coord_ia[0].upper()
                 fila = coord_ia[1]
@@ -162,7 +202,7 @@ if __name__ == "__main__":
                     print(f"[RED] Enviando disparo automático: {disparo}")
 
                     respuesta = recibir_mensaje(canal_juego)
-                    
+
                     if respuesta is None:
                         print("El rival se ha desconectado.")
                         partida_activa = False
@@ -172,12 +212,18 @@ if __name__ == "__main__":
 
                     mi_tablero.registrar_resultado(respuesta)
 
+                    # Registrar el ataque en el tablero de seguimiento
+                    registrar_ataque_en_tablero(tablero_ataques, letra, fila, respuesta)
+
+                    # Mostrar el tablero de ataques al rival
+                    imprimir_tablero_ataques(tablero_ataques)
+
                     if "VICTORIA" in respuesta:
-                        print("\n" + "*"*40)
+                        print("\n" + "*" * 40)
                         print("¡VICTORIA! HAS HUNDIDO LA FLOTA RIVAL.")
-                        print("*"*40)
+                        print("*" * 40)
                         partida_activa = False
-                    
+
                     elif "TOCADO" in respuesta or "HUNDIDO" in respuesta:
                         es_mi_turno = True
                     else:
@@ -190,10 +236,10 @@ if __name__ == "__main__":
             else:
                 print(f"\n--- TURNO DE {nombre_rival} ---")
                 print("Esperando disparo...")
-                
+
                 try:
                     disparo_recibido = recibir_mensaje(canal_juego)
-                    
+
                     if disparo_recibido is None:
                         print("El rival se ha desconectado.")
                         partida_activa = False
@@ -203,23 +249,23 @@ if __name__ == "__main__":
 
                     letra_r = disparo_recibido[0].lower()
                     fila_r = int(disparo_recibido[1:])
-                    
+
                     resultado_impacto = mi_tablero.recibir_ataque(letra_r, fila_r)
                     print(f"Impacto en mi tablero: {resultado_impacto}")
-                    
+
                     # Cuando he perdido los barcos
                     if not mi_tablero.quedan_barcos_vivos():
-                        resultado_impacto = "VICTORIA" # Le digo al otro que ganó
-                        canal_juego.sendall(resultado_impacto.encode()) # Se lo envío
-                        
-                        print("\n" + "!"*40)
+                        resultado_impacto = "VICTORIA"  # Le digo al otro que ganó
+                        canal_juego.sendall(resultado_impacto.encode())
+
+                        print("\n" + "!" * 40)
                         print("¡DERROTA! HAN HUNDIDO TU FLOTA.")
-                        print("!"*40)
-                        
+                        print("!" * 40)
+
                         # Pausa para que el mensaje llegue
-                        time.sleep(3) 
+                        time.sleep(3)
                         partida_activa = False
-                    
+
                     else:
                         canal_juego.sendall(resultado_impacto.encode())
 
