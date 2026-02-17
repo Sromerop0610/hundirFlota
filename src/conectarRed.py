@@ -130,6 +130,8 @@ def imprimir_tablero_ataques(tablero_ataques, dimension=8):
         print()
     print()
 
+    time.sleep(2)
+
 
 def registrar_ataque_en_tablero(tablero_ataques, columna_letra, fila_num_usuario, resultado):
     """
