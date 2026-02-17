@@ -51,16 +51,16 @@ class Tablero:
                 self.barcos.append(barco)
                 barco_puesto = True
 
-    def recibir_ataque(self, fila_letra, columna_num_usuario):
+    def recibir_ataque(self, columna_letra, fila_num_usuario):
         """
-        Recibe ataque con formato (letra_fila, número_columna).
-        - fila_letra: letra 'a'-'h' que indica la fila.
-        - columna_num_usuario: número del 1 al 8 que indica la columna.
-        Internamente convierte: fila_indice = letra->0-7, col_indice = número - 1.
+        Recibe ataque con formato (letra_columna, número_fila).
+        - columna_letra: letra 'a'-'h' que indica la columna.
+        - fila_num_usuario: número del 1 al 8 que indica la fila.
+        Internamente convierte: col_idx = letra->0-7, fila_idx = número - 1.
         """
         diccionario_letras = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
-        fila_idx = diccionario_letras[fila_letra.lower()]
-        col_idx = columna_num_usuario - 1  # Conversión 1-8 → 0-7
+        col_idx = diccionario_letras[columna_letra.lower()]
+        fila_idx = fila_num_usuario - 1  # Conversión 1-8 → 0-7
 
         contenido = self.cuadricula[fila_idx][col_idx]
 
@@ -82,9 +82,9 @@ class Tablero:
         if not (0 <= fila_idx < self.dimension and 0 <= col_idx < self.dimension):
             return False
         # Comprobamos en ataques_realizados usando el formato externo [letra, número 1-8]
-        letra_f = chr(97 + fila_idx)
-        col_usuario = col_idx + 1  # Conversión 0-7 → 1-8
-        if [letra_f, col_usuario] in self.ataques_realizados:
+        letra_c = chr(97 + col_idx)
+        fila_usuario = fila_idx + 1  # Conversión 0-7 → 1-8
+        if [letra_c, fila_usuario] in self.ataques_realizados:
             return False
         if (fila_idx, col_idx) in self.casillas_descartadas:
             return False
@@ -101,7 +101,7 @@ class Tablero:
     def atacar(self):
         """
         Estrategia inteligente con patrón de ajedrez.
-        Devuelve [letra_fila, número_columna] con número del 1 al 8.
+        Devuelve [letra_columna, número_fila] con número del 1 al 8.
         """
         diccionario_idx_a_let = {i: chr(97 + i) for i in range(8)}
 
@@ -134,9 +134,9 @@ class Tablero:
                     fila_idx, col_idx = random.choice(casillas_restantes)
 
         if fila_idx is not None:
-            fila_letra = diccionario_idx_a_let[fila_idx]
-            col_usuario = col_idx + 1  # Conversión 0-7 → 1-8
-            intento = [fila_letra, col_usuario]  # [letra_fila, número_columna 1-8]
+            columna_letra = diccionario_idx_a_let[col_idx]
+            fila_usuario = fila_idx + 1  # Conversión 0-7 → 1-8
+            intento = [columna_letra, fila_usuario]  # [letra_columna, número_fila 1-8]
             self.ataques_realizados.append(intento)
             self.ultimo_ataque_exitoso = (fila_idx, col_idx)
             return intento
@@ -172,18 +172,17 @@ class Tablero:
 
     def imprimir(self, ocultar_barcos=False):
         """
-        Imprime el tablero con filas = letras (A-H) y columnas = números (1-8).
+        Imprime el tablero con columnas = letras (A-H) y filas = números (1-8).
         """
-        # Encabezado: números de columna 1-8
+        # Encabezado: letras de columna A-H
         print("\n    ", end="")
-        for num in range(1, self.dimension + 1):
-            print(num, end=" ")
+        for letra in "ABCDEFGH"[:self.dimension]:
+            print(letra, end=" ")
         print()
 
-        # Filas: letras A-H
+        # Filas: números 1-8
         for idx, fila in enumerate(self.cuadricula):
-            letra = chr(65 + idx)  # A, B, C, ...
-            print(f"  {letra} ", end="")
+            print(f"  {idx + 1} ", end="")  # Muestra 1-8 en vez de 0-7
             for celda in fila:
                 if ocultar_barcos and celda not in ["~", "X", "o"]:
                     print("~", end=" ")
@@ -211,6 +210,9 @@ def main():
     for barco in flota_oponente:
         tablero_oponente.agregar_barco(barco)
 
+    print("=" * 50)
+    print("         BATALLA NAVAL - IA vs IA")
+    print("=" * 50)
 
     print("\nTU TABLERO (tus barcos):")
     tablero_jugador.imprimir(ocultar_barcos=False)
@@ -228,14 +230,16 @@ def main():
 
         # TURNO JUGADOR (IA)
         print("\n--- Tu Turno ---")
-        fila_letra, col_num = tablero_jugador.atacar()  # [letra, número 1-8]
-        estado = tablero_oponente.recibir_ataque(fila_letra, col_num)
-        print(f"➤ Atacas en ({fila_letra.upper()}, {col_num}): {estado}")
+        columna_letra, fila_num = tablero_jugador.atacar()  # [letra, número 1-8]
+        estado = tablero_oponente.recibir_ataque(columna_letra, fila_num)
+        print(f"➤ Atacas en ({columna_letra.upper()}, {fila_num}): {estado}")
         tablero_jugador.registrar_resultado(estado)
 
         if not tablero_oponente.quedan_barcos_vivos():
+            print("\n" + "=" * 50)
             print("¡VICTORIA!")
             print("Has hundido toda la flota enemiga")
+            print("=" * 50)
             print("\nTABLERO ENEMIGO FINAL:")
             tablero_oponente.imprimir(ocultar_barcos=False)
             jugar = False
@@ -243,9 +247,9 @@ def main():
 
         # TURNO OPONENTE
         print("\n--- Turno del Oponente ---")
-        fila_letra, col_num = tablero_oponente.atacar()  # [letra, número 1-8]
-        estado = tablero_jugador.recibir_ataque(fila_letra, col_num)
-        print(f"➤ Enemigo ataca en ({fila_letra.upper()}, {col_num}): {estado}")
+        columna_letra, fila_num = tablero_oponente.atacar()  # [letra, número 1-8]
+        estado = tablero_jugador.recibir_ataque(columna_letra, fila_num)
+        print(f"➤ Enemigo ataca en ({columna_letra.upper()}, {fila_num}): {estado}")
         tablero_oponente.registrar_resultado(estado)
 
         print("\n TU TABLERO:")
@@ -255,8 +259,10 @@ def main():
         tablero_oponente.imprimir(ocultar_barcos=True)
 
         if not tablero_jugador.quedan_barcos_vivos():
+            print("\n" + "=" * 50)
             print("DERROTA")
             print("El enemigo hundió tu flota")
+            print("=" * 50)
             jugar = False
 
         turno += 1
